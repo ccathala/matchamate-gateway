@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-    
+
     @Autowired
     AuthenticationManager authenticationManager;
 
@@ -51,74 +51,77 @@ public class AuthController {
 
     @Autowired
     JwtUtils jwtUtils;
- 
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-     
-        UsernamePasswordAuthenticationToken authenticationToken = 
-            new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
+
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                loginRequest.getEmail(), loginRequest.getPassword());
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
-        
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-            .map(item -> item.getAuthority())
-            .collect(Collectors.toList());
+        List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getEmail(), roles));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
-        
+
         if (userDao.existsByEmail(signupRequest.getEmail())) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Email already taken"));
         }
-        
+
+        if (!signupRequest.getPassword().equals(signupRequest.getPasswordConfirm())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Password confirmation failed"));
+        }
+
         // Create user's account
 
-    User user = new User(signupRequest.getEmail(), encoder.encode(signupRequest.getPassword()));
+        User user = new User(signupRequest.getEmail(), encoder.encode(signupRequest.getPassword()));
 
-    Set<String> strRoles = signupRequest.getRoles();
-    Set<Role> roles = new HashSet<>();
+        Set<String> strRoles = signupRequest.getRoles();
+        Set<Role> roles = new HashSet<>();
 
-    String roleNotFoundErrorMsg = "Error: Role is not found.";
+        String roleNotFoundErrorMsg = "Error: Role is not found.";
 
-    if (strRoles == null) {
-        Role userRole = roleDao.findByName(ERole.ROLE_PLAYER)
-            .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
-        roles.add(userRole);
-    } else {
-        strRoles.forEach(role -> {
-            switch (role) {
-                case "company":
-                    Role companyRole = roleDao.findByName(ERole.ROLE_COMPANY)
-                        .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
-                    roles.add(companyRole);
-                    break;
+        if (strRoles == null) {
+            Role userRole = roleDao.findByName(ERole.ROLE_PLAYER)
+                    .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
+            roles.add(userRole);
+        } else {
+            strRoles.forEach(role -> {
+                switch (role) {
+                    case "company":
+                        Role companyRole = roleDao.findByName(ERole.ROLE_COMPANY)
+                                .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
+                        roles.add(companyRole);
+                        break;
 
-                case "admin":
-                    Role adminRole = roleDao.findByName(ERole.ROLE_ADMIN)
-                        .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
-                    roles.add(adminRole);
-                    break;
-            
-                default:
-                    Role userRole = roleDao.findByName(ERole.ROLE_PLAYER)
-                        .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
-                    roles.add(userRole);
-                    break;
-            }
-        });
-    }
-    
-    user.setRoles(roles);
-    userDao.save(user);
-    
-    return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-        
+                    case "admin":
+                        Role adminRole = roleDao.findByName(ERole.ROLE_ADMIN)
+                                .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
+                        roles.add(adminRole);
+                        break;
+
+                    default:
+                        Role userRole = roleDao.findByName(ERole.ROLE_PLAYER)
+                                .orElseThrow(() -> new RuntimeException(roleNotFoundErrorMsg));
+                        roles.add(userRole);
+                        break;
+                }
+            });
+        }
+
+        user.setRoles(roles);
+        userDao.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+
     }
 }

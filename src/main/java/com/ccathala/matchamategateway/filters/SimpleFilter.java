@@ -1,5 +1,8 @@
 package com.ccathala.matchamategateway.filters;
 
+import java.io.IOException;
+import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 
 import com.netflix.zuul.ZuulFilter;
@@ -10,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SimpleFilter extends ZuulFilter {
-    
+
     private static Logger log = LoggerFactory.getLogger(SimpleFilter.class);
 
     @Override
@@ -19,8 +22,16 @@ public class SimpleFilter extends ZuulFilter {
         HttpServletRequest request = ctx.getRequest();
 
         String sentRequest = String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString());
-
+        String body = "";
+        try {
+            body = request.getReader().lines().collect(Collectors.joining());
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
         log.info(sentRequest);
+        log.info(body);
         return null;
     }
 

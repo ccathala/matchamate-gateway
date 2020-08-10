@@ -16,10 +16,10 @@ public class TestController {
         return "Public Content";
     }
 
-    @GetMapping("/user")
+    @GetMapping("/player")
     @PreAuthorize("hasRole('PLAYER')")
     public String userAccess() {
-        return "User Content";
+        return "Player Content";
     }
 
     @GetMapping("/company")
