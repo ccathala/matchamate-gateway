@@ -31,6 +31,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -70,8 +75,26 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getEmail(), roles));
     }
 
+    @PostMapping("/refreshtoken")
+    public ResponseEntity<?> refreshToken(@RequestBody String token) {
+        
+        String email = jwtUtils.getUserEmailFromJwtToken(token);
+        String jwt = jwtUtils.generateJwtTokenByEmail(email);
+
+        return ResponseEntity.ok(new JwtResponse(jwt, email));
+
+    }
+
+    @PostMapping("/validatetoken")
+    public ResponseEntity<?> validateToken(@RequestBody String token) {
+        
+        Boolean tokenIsValid = jwtUtils.validateJwtToken(token);
+        return ResponseEntity.ok(tokenIsValid);
+
+    }
+
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<MessageResponse> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
 
         if (userDao.existsByEmail(signupRequest.getEmail())) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Email already taken"));
@@ -124,4 +147,15 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
 
     }
+
+    @RequestMapping(value="deleteuser", method=RequestMethod.DELETE)
+    public ResponseEntity<?> deleteUserByEmail(@RequestParam("email") String email) {
+        if (userDao.existsByEmail(email)) {
+            userDao.deleteByEmail(email);
+            return ResponseEntity.ok().body(new MessageResponse("User deleted successfully: " + email));
+        } else {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: User don't exist"));
+        }
+    }  
+    
 }

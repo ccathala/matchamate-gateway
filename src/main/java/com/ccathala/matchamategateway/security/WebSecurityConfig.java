@@ -31,7 +31,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private AuthEntryPointJwt unauthorizedHandler;
 
     @Bean
-    public AuthTokenFilter authenticationJwtTokenFilter(){
+    public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
     }
 
@@ -40,8 +40,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
     }
 
-    @Bean  
-        
+    @Bean
+
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
@@ -51,21 +51,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-            .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-            .authorizeRequests()
-            .antMatchers("/auth/**").permitAll()
-            .antMatchers("/test/**").permitAll()
-            .antMatchers(HttpMethod.POST, "/matchamate-player-api/players").permitAll()
-            .anyRequest().authenticated();
+
+        http.cors().and().csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
+                .antMatchers("/auth/signin").permitAll()
+                .antMatchers("/auth/signup").permitAll()
+                .antMatchers("/test/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/matchamate-player-api/players").permitAll()
+                .antMatchers(HttpMethod.GET,
+                        "/matchamate-session-api/sessions/search/findByCompany_Address_Region_CodeContainsAndCompany_Address_Departement_CodeContainsAndCompany_NameContainsAndBadmintonRequiredLevelContainsAndIsFullFalseAndIsDoneFalseAndCompany_CompanyDataIsSetTrue")
+                .permitAll()
+                .antMatchers(HttpMethod.GET, "/matchamate-company-api/companies/search/findByCompanyDataIsSetTrueOrderByAddress_Departement_CodeAsc").permitAll()
+                .anyRequest().authenticated();
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 
-    
 }

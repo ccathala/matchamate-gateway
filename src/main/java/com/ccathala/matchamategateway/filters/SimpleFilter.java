@@ -26,7 +26,6 @@ public class SimpleFilter extends ZuulFilter {
         try {
             body = request.getReader().lines().collect(Collectors.joining());
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         
